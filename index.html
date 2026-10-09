@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>F1 27 & Manager 26 Cinematic Pro</title>
+    <script src="https://jsdelivr.net"></script>
+    <style>
+        :root { --f1-red: #e10600; --bg-dark: #050608; --card-bg: rgba(16, 18, 22, 0.85); --border: #232731; --text: #f3f4f6; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: var(--bg-dark); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; overflow: hidden; }
+        
+        /* High-Performance Canvas Video Layer */
+        #bgCanvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; pointer-events: none; }
+        
+        /* Cinematic Glass Overlay Layout */
+        .auth-container { position: relative; z-index: 2; max-width: 450px; margin: 10vh auto; padding: 35px; background: var(--card-bg); border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1); backdrop-filter: blur(12px); box-shadow: 0 20px 50px rgba(0,0,0,0.9); }
+        .screen { max-width: 950px; margin: 20px auto; padding: 25px; background: #101216; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 15px 40px rgba(0,0,0,0.8); position: relative; z-index: 5; }
+        .hidden { display: none !important; }
+        
+        h1, h2, h3 { color: var(--f1-red); text-transform: uppercase; letter-spacing: 2px; margin-top: 0; font-weight: 900; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        input, select { background: rgba(24, 27, 34, 0.9); color: white; border: 1px solid var(--border); padding: 14px; width: 100%; box-sizing: border-box; border-radius: 8px; margin: 10px 0; font-size: 15px; font-weight: 600; transition: 0.2s; }
+        input:focus { border-color: var(--f1-red); outline: none; background: #1c2029; }
+        
+        button { background: var(--f1-red); color: white; border: none; padding: 14px 24px; font-size: 14px; font-weight: bold; border-radius: 8px; cursor: pointer; margin: 8px 0; width: 100%; transition: all 0.2s ease; text-transform: uppercase; letter-spacing: 1px; }
+        button:hover { background: #b80500; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(225, 6, 0, 0.4); }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .card { background: #161920; padding: 18px; border-radius: 8px; border-top: 3px solid var(--f1-red); }
+        .stats-bar { display: flex; justify-content: space-between; background: #0b0c0f; padding: 16px; border-radius: 8px; margin-bottom: 20px; font-weight: 700; border: 1px solid var(--border); }
+        .slot-btn { background: #161920; border: 1px solid var(--border); text-align: left; padding: 18px; width: 100%; color: white; border-radius: 8px; margin: 10px 0; cursor: pointer; font-size: 16px; transition: 0.15s; }
+        .slot-btn:hover { border-color: var(--f1-red); background: #1e222c; }
+        .captcha-box { background: rgba(11, 12, 15, 0.8); border: 1px dashed var(--f1-red); padding: 15px; margin: 15px 0; text-align: center; border-radius: 8px; font-weight: 600; }
+        .upgrade-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); }
+        .tab-btn { background: #181b22; border: 1px solid var(--border); width: auto; padding: 8px 16px; margin-right: 5px; color: white; cursor: pointer; border-radius: 4px; }
+        .tab-btn.active { background: var(--f1-red); border-color: var(--f1-red); }
+        #raceCanvas { background: #1f2229; display: block; margin: 20px auto; border-radius: 8px; border: 2px solid var(--border); }
+    </style>
+</head>
+<body>
+
+    <!-- VIDEO SIMULATION ENVIRONMENT RENDER NODE -->
+    <canvas id="bgCanvas"></canvas>
+
+    <!-- 1. CINEMATIC AUTHENTICATION CONTAINER -->
+    <div id="authScreen" class="auth-container">
+        <h1>🏎️ Live Grand Prix Engine</h1>
+        <p style="font-size: 13px; color: #aaa; margin-bottom: 20px;">Initialize credential pathways to download live grid statistics variables.</p>
+        
+        <input type="email" id="authEmail" placeholder="Driver Registration Email">
+        <input type="password" id="authPassword" placeholder="Telemetry Password Key">
+        
+        <div class="captcha-box">
+            🛡️ Dynamic Paddock Security Active<br>
+            <input type="checkbox" id="captchaCheck" style="width:auto; margin-top:10px; transform: scale(1.3); cursor:pointer;"> 
+            <label for="captchaCheck" style="margin-left: 8px; cursor:pointer; font-size: 14px;">Confirm Human Presence Check</label>
+        </div>
+
+        <div class="grid-2">
+            <button onclick="handleAuth('signin')">Enter Hub</button>
+            <button style="background:#181b22; border:1px solid var(--border);" onclick="handleAuth('signup')">Register</button>
+        </div>
+    </div>
+    <!-- 2. SAVE CONFIGURATION DECK -->
+    <div id="slotScreen" class="screen hidden">
+        <h2>💾 Master Save Datasets</h2>
+        <p>Select a local structural slot node to synchronize with your Supabase table arrays.</p>
+        <button class="slot-btn" onclick="selectSlot(1)">📁 <b>SAVE CONFIG DECK 01:</b> <span id="slot1Text">Empty Profile</span></button>
+        <button class="slot-btn" onclick="selectSlot(2)">📁 <b>SAVE CONFIG DECK 02:</b> <span id="slot2Text">Empty Profile</span></button>
+        <button class="slot-btn" onclick="selectSlot(3)">📁 <b>SAVE CONFIG DECK 03:</b> <span id="slot3Text">Empty Profile</span></button>
+        <button style="background:#444; margin-top:20px;" onclick="signOutUser()">Log Out Terminal</button>
+    </div>
+
+    <!-- 3. ROLE SELECTION SECTOR -->
+    <div id="roleScreen" class="screen hidden">
+        <h2>Select Strategy Profile Assignment</h2>
+        <div class="grid-2">
+            <div class="card">
+                <h3>🏎️ F1 27 Driver Alignment</h3>
+                <p>Sign active seasonal grid contracts, control dynamic drag vectors, execute physical track parameters, and win championships.</p>
+                <button onclick="setRole('driver')">Establish Driver Profile</button>
+            </div>
+            <div class="card">
+                <h3>📊 F1 Manager 26 Suite</h3>
+                <p>Command operational budgets, manage powertrain R&D, deploy multi-compound tyre strategies, and run factory facility expansions.</p>
+                <button onclick="setRole('principal')">Establish Principal Suite</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. REAL GRID MATRIX SELECTOR -->
+    <div id="teamScreen" class="screen hidden">
+        <h2>Sign Official FIA Paddock Contract</h2>
+        <select id="teamSelect">
+            <option value="ferrari">Scuderia Ferrari HP</option>
+            <option value="mclaren">McLaren F1 Team</option>
+            <option value="redbull">Oracle Red Bull Racing</option>
+            <option value="mercedes">Mercedes-AMG PETRONAS</option>
+            <option value="audi">Audi F1 Factory Team</option>
+        </select>
+        <button onclick="confirmTeam()">Execute Structural Document</button>
+    </div>
+
+    <!-- 5. MAIN HUB SCREEN -->
+    <div id="mainHubScreen" class="screen hidden">
+        <h2 id="hubTitle">Paddock Administration Deck</h2>
+        <div class="stats-bar">
+            <div>TEAM: <span id="uiTeam" style="color:var(--f1-red);"></span></div>
+            <div>CAPITAL: $<span id="uiBudget"></span>M</div>
+            <div>TIMELINE ERA: <span id="uiYear"></span></div>
+            <div id="driverRepContainer">XP INDEX: <span id="uiRep"></span></div>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <button class="tab-btn active" id="tab1" onclick="switchTab('hq')">🏢 Engineering Hub</button>
+            <button class="tab-btn" id="tab2" onclick="switchTab('race')">🏁 Operations Control</button>
+        </div>
+
+        <!-- SUB-TAB 1: 1:1 VEHICLE CONFIGS -->
+        <div id="hqTab">
+            <h3>Vehicle Development System</h3>
+            <div class="card">
+                <div class="upgrade-row">
+                    <div><b>V6 Turbo / Sustainable Hybrid Engine</b><br><small>Increases terminal velocity indices on straight sectors</small></div>
+                    <div>Rating: <span id="lvlEngine">0</span>/10</div>
+                    <button style="width:auto;" onclick="purchaseComponent('engine')">Develop ($12M)</button>
+                </div>
+                <div class="upgrade-row">
+                    <div><b>MGU-K Powertrain Kinetic Harvesting</b><br><small>Optimizes torque deployment curves out of low-speed turns</small></div>
+                    <div>Rating: <span id="lvlMguk">0</span>/10</div>
+                    <button style="width:auto;" onclick="purchaseComponent('mguk')">Develop ($10M)</button>
+                </div>
+                <div class="upgrade-row">
+                    <div><b>Aerodynamic Sidepod / Venturi Venting</b><br><small>Mitigates slip angle air separation in dirty wake paths</small></div>
+                    <div>Rating: <span id="lvlAero">0</span>/10</div>
+                    <button style="width:auto;" onclick="purchaseComponent('aero')">Develop ($15M)</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SUB-TAB 2: ACTIONS -->
+        <div id="raceTab" class="hidden">
+            <h3>Grand Prix Circuit Management</h3>
+            <div id="managerOptions" class="card hidden">
+                <h4>F1 Manager 26 Simulator Loops</h4>
+                <label>Select Compound Strategy Array:</label>
+                <select id="tyreStrategy">
+                    <option value="soft">🔴 Soft Compound (Aggressive Over-cut / High Thermal Wear)</option>
+                    <option value="medium">🟡 Medium Compound (Optimal Race Optimization Curve)</option>
+                    <option value="hard">⚪ Hard Compound (Extended Endurance Stint Profile)</option>
+                </select>
+                <button onclick="runManagerSimulation()">Simulate Circuit Session</button>
+            </div>
+
+            <div id="driverOptions" class="card hidden">
+                <h4>F1 27 Real-Time Graphic Session</h4>
+                <p>Deploy full canvas frame rate physics matrices for real-time race events.</p>
+                <button onclick="launchInteractiveRace()">Enter Cockpit HUD</button>
+            </div>
+        </div>
+
+        <div style="margin-top: 25px; border-top: 1px solid var(--border); padding-top: 15px;" class="grid-2">
+            <button style="background:#2e7d32;" onclick="manualSaveCloud()">💾 Push Save State to Cloud</button>
+            <button style="background:#444;" onclick="exitToSlots()">↩️ Return to Profiles</button>
+        </div>
+    </div>
+
+    <!-- 6. DRIVER COCKPIT HUD -->
+    <div id="canvasTrackScreen" class="screen hidden" style="position:relative; z-index:10;">
+        <h2>Grand Prix Circuit Stream</h2>
+        <div class="stats-bar" style="max-width:400px; margin: 10px auto;">
+            <div>SPEED: <span id="liveSpeedText">0</span> KM/H</div>
+            <div>SECTOR LAP: <span id="liveDistText">0</span>/1000m</div>
+        </div>
+        <canvas id="raceCanvas" width="600" height="450"></canvas>
+    </div>
+    <script>
+        // --- SECURE STORAGE NETWORK KEYS ---
+        const SUPABASE_URL = "https://supabase.co";
+        const SUPABASE_ANON_KEY = "sb_publishable_V849WmDO_6RzV1OWN9he_w_-2Xad8yW";
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let currentUser = null; let activeSlot = null; let allSavesData = {};
+        let gameState = { role: null, team: null, year: 2026, budget: 140, rep: 100, engine: 1, mguk: 1, aero: 1 };
+
+        // --- BACKGROUND CINEMATIC GENERATOR (10 SCENE ENGINE) ---
+        const bgCanvas = document.getElementById("bgCanvas"); const bgCtx = bgCanvas.getContext("2d");
+        let sceneTime = 0; let currentSceneType = 0;
+        let bgCars = []; let bgParticles = [];
+
+        function resizeBg() { bgCanvas.width = window.innerWidth; bgCanvas.height = window.innerHeight; }
+        window.addEventListener('resize', resizeBg); resizeBg();
+
+        function runCinematicEngine() {
+            sceneTime++;
+            if(sceneTime > 250) {
+                sceneTime = 0;
+                currentSceneType = (currentSceneType + 1) % 10;
+                bgCars = []; bgParticles = [];
+            }
+
+            bgCtx.fillStyle = "#050608"; bgCtx.fillRect(0,0,bgCanvas.width,bgCanvas.height);
+            let cx = bgCanvas.width / 2; let cy = bgCanvas.height / 2;
+
+            switch(currentSceneType) {
+                case 0: 
+                    drawCinematicTrack(cx, cy, 0.4, true, "Overtake Sequence: Sector 1"); break;
+                case 1: 
+                    drawFlybyScene(cy, 80, "Pit Lane Telemetry Feed"); break;
+                case 2: 
+                    drawCinematicTrack(cx - 150, cy, 0.8, false, "Chicanes Apex Shifting"); break;
+                case 3: 
+                    drawCockpitView(cx, cy); break;
+                case 4: 
+                    drawSlipstreamScene(cx, cy); break;
+                case 5: 
+                    drawDroneScene(cx, cy); break;
+                case 6: 
+                    drawLockupScene(cx, cy); break;
+                case 7: 
+                    drawCinematicTrack(cx + Math.sin(sceneTime*0.05)*100, cy, 0.5, true, "Sector 2 Stability Evaluation"); break;
+                case 8: 
+                    drawFlybyScene(cy, 20, "Cool-down Diagnostic Array"); break;
+                case 9: 
+                    drawCinematicTrack(cx, cy, 0.2, true, "DRS Activation: Sector 3"); break;
+            }
+
+            requestAnimationFrame(runCinematicEngine);
+        }
+
+        function drawCinematicTrack(horizonX, horizonY, curveScale, spawnSparks, labelText) {
+            bgCtx.fillStyle = "#1e222b";
+            bgCtx.beginPath(); bgCtx.moveTo(0, bgCanvas.height); bgCtx.lineTo(horizonX, horizonY);
+            bgCtx.lineTo(bgCanvas.width, bgCanvas.height); bgCtx.fill();
+
+            bgCtx.strokeStyle = (Math.floor(sceneTime/5)%2===0) ? "#e10600" : "#ffffff"; bgCtx.lineWidth = 12;
+            bgCtx.beginPath(); bgCtx.moveTo(0, bgCanvas.height); bgCtx.lineTo(horizonX, horizonY); bgCtx.stroke();
+            bgCtx.beginPath(); bgCtx.moveTo(bgCanvas.width, bgCanvas.height); bgCtx.lineTo(horizonX, horizonY); bgCtx.stroke();
+
+            bgCtx.fillStyle = "#e10600"; bgCtx.fillRect(horizonX - 40 + (Math.sin(sceneTime*0.04)*80), horizonY + (sceneTime*3), 60, 40);
+            bgCtx.fillStyle = "#00d2be"; bgCtx.fillRect(horizonX - 20, horizonY + (sceneTime * 2.2), 55, 38);
+
+            if(spawnSparks && Math.random() < 0.6) {
+                bgParticles.push({x: horizonX + (Math.random()*60-30), y: horizonY + (sceneTime*2.8), vx: Math.random()*4-2, vy: Math.random()*2+2, a: 1.0});
+            }
+            drawBgParticles();
+            drawHUDText(labelText);
+        }
+
+        function drawFlybyScene(cy, speedVal, labelText) {
+            bgCtx.fillStyle = "#11151c"; bgCtx.fillRect(0, cy-100, bgCanvas.width, 200);
+            let carX = (sceneTime * speedVal) % (bgCanvas.width + 400) - 200;
+            bgCtx.fillStyle = "#ff8700"; bgCtx.fillRect(carX, cy-30, 140, 45);
+            bgCtx.fillStyle = "#000"; bgCtx.fillRect(carX+10, cy+15, 25, 15); bgCtx.fillRect(carX+100, cy+15, 25, 15);
+            drawHUDText(labelText);
+        }
+
+        function drawCockpitView(cx, cy) {
+            bgCtx.fillStyle = "#222530"; bgCtx.fillRect(0, cy, bgCanvas.width, cy);
+            bgCtx.fillStyle = "#0c0d12";
+            bgCtx.beginPath(); bgCtx.moveTo(cx-20, bgCanvas.height); bgCtx.lineTo(cx-5, cy+100); bgCtx.lineTo(cx+5, cy+100); bgCtx.lineTo(cx+20, bgCanvas.height); bgCtx.fill();
+            drawHUDText("Driver Dashboard HUD Stream");
+        }
+
+        function drawSlipstreamScene(cx, cy) {
+            drawCinematicTrack(cx, cy, 0.3, true, "Slipstream Intake Analysis");
+            bgCtx.fillStyle = "rgba(255,255,255,0.08)";
+            for(let i=0; i<5; i++) bgCtx.fillRect(cx - 100 + (i*50), 0, 2, bgCanvas.height);
+        }
+
+        function drawDroneScene(cx, cy) {
+            bgCtx.fillStyle = "#252932"; bgCtx.fillRect(cx-200, 0, 400, bgCanvas.height);
+            bgCtx.fillStyle = "#e10600"; bgCtx.fillRect(cx-30, sceneTime*4, 40, 75);
+            drawHUDText("Overhead Drone Tracking Network");
+        }
+
+        function drawLockupScene(cx, cy) {
+            drawCinematicTrack(cx - 50, cy, 0.4, false, "Tire Deflection Lockup: Turn 4");
+            if(sceneTime > 50 && sceneTime < 180) {
+                bgCtx.fillStyle = `rgba(240,240,240, ${0.4 - (sceneTime*0.001)})`;
+                bgCtx.beginPath(); bgCtx.arc(cx - 30, cy + (sceneTime*2), 15 + (sceneTime*0.3), 0, Math.PI*2); bgCtx.fill();
+            }
+        }
+
+        function drawBgParticles() {
+            for(let i=bgParticles.length-1; i>=0; i--) {
+                let p = bgParticles[i]; p.x += p.vx; p.y += p.vy; p.a -= 0.015;
+                bgCtx.fillStyle = `rgba(255, 165, 0, ${p.a})`; bgCtx.fillRect(p.x, p.y, 4, 4);
+                if(p.a <= 0) bgParticles.splice(i,1);
+            }
+        }
+
+        function drawHUDText(str) {
+            bgCtx.fillStyle = "rgba(225, 6, 0, 0.85)"; bgCtx.font = "bold 13px 'Courier New'";
+            bgCtx.fillText(`[LIVE TELEMETRY] // ${str.toUpperCase()}`, 30, bgCanvas.height - 40);
+            bgCtx.fillStyle = "#444"; bgCtx.fillRect(30, bgCanvas.height-30, 250, 4);
+            bgCtx.fillStyle = "#e10600"; bgCtx.fillRect(30, bgCanvas.height-30, (sceneTime/250)*250, 4);
+        }
+        // --- SCREEN ROUTING & AUTHENTICATION SYSTEMS ---
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+            document.getElementById('canvasTrackScreen').classList.add('hidden');
+            if(screenId === 'authScreen') {
+                document.getElementById('authScreen').classList.remove('hidden');
+                document.getElementById('bgCanvas').style.display = "block";
+            } else {
+                document.getElementById('authScreen').classList.add('hidden');
+                document.getElementById('bgCanvas').style.display = "none";
+                document.getElementById(screenId).classList.remove('hidden');
+            }
+        }
+
+        function switchTab(tab) {
+            document.getElementById('tab1').classList.remove('active'); document.getElementById('tab2').classList.remove('active');
+            if(tab === 'hq') { document.getElementById('tab1').classList.add('active'); document.getElementById('hqTab').classList.remove('hidden'); document.getElementById('raceTab').classList.add('hidden'); }
+            else { document.getElementById('tab2').classList.add('active'); document.getElementById('hqTab').classList.add('hidden'); document.getElementById('raceTab').classList.remove('hidden'); }
+        }
+
+        async function handleAuth(type) {
+            if (!document.getElementById("captchaCheck").checked) return alert("Clear Security Verification Profile first!");
+            const email = document.getElementById("authEmail").value; const password = document.getElementById("authPassword").value;
+            let result = type === 'signup' ? await supabase.auth.signUp({ email, password }) : await supabase.auth.signInWithPassword({ email, password });
+            if (!result.error) {
+                if(type === 'signup') alert("Contract Node Registered! Proceed to Enter Paddock.");
+                else { currentUser = result.data.user; loadAllSlotsData(); }
+            } else alert(result.error.message);
+        }
+
+        async function signOutUser() {
+            await supabase.auth.signOut(); currentUser = null; document.getElementById("captchaCheck").checked = false; showScreen("authScreen");
+        }
+
+        async function loadAllSlotsData() {
+            const { data } = await supabase.from('career_save').select('*').eq('user_id', currentUser.id);
+            for(let i=1; i<=3; i++) document.getElementById(`slot${i}Text`).innerText = "Available Workspace Profile Node";
+            allSavesData = {};
+            if (data) {
+                data.forEach(save => {
+                    allSavesData[save.slot_number] = save;
+                    document.getElementById(`slot${save.slot_number}Text`).innerText = `${save.role.toUpperCase()} - ${save.team.toUpperCase()} (Year ${save.year}) - Engine Lvl:${save.engine}`;
+                });
+            }
+            showScreen("slotScreen");
+        }
+
+        function selectSlot(slotNum) {
+            activeSlot = slotNum;
+            if (allSavesData[slotNum]) { gameState = allSavesData[slotNum]; launchCorrectHub(); }
+            else { gameState = { role: null, team: null, year: 2026, budget: 150, rep: 100, engine: 1, mguk: 1, aero: 1 }; showScreen("roleScreen"); }
+        }
+
+        function setRole(roleChoice) { gameState.role = roleChoice; showScreen("teamScreen"); }
+        function confirmTeam() { gameState.team = document.getElementById("teamSelect").value; launchCorrectHub(); }
+
+        function launchCorrectHub() {
+            document.getElementById("uiTeam").innerText = gameState.team.toUpperCase();
+            document.getElementById("uiBudget").innerText = gameState.budget;
+            document.getElementById("uiYear").innerText = gameState.year;
+            document.getElementById("uiRep").innerText = gameState.rep;
+            document.getElementById("lvlEngine").innerText = gameState.engine;
+            document.getElementById("lvlMguk").innerText = gameState.mguk;
+            document.getElementById("lvlAero").innerText = gameState.aero;
+            if (gameState.role === 'principal') { document.getElementById("driverRepContainer").style.display = "none"; document.getElementById("managerOptions").classList.remove("hidden"); document.getElementById("driverOptions").classList.add("hidden"); }
+            else { document.getElementById("driverRepContainer").style.display = "block"; document.getElementById("driverOptions").classList.remove("hidden"); document.getElementById("managerOptions").classList.add("hidden"); }
+            showScreen("mainHubScreen");
+        }
+
+        function purchaseComponent(type) {
+            let costs = { engine: 12, mguk: 10, aero: 15 };
+            if (gameState.budget >= costs[type]) {
+                if (gameState[type] >= 10) return alert("Component max structural specification limit reached!");
+                gameState.budget -= costs[type]; gameState[type]++; launchCorrectHub();
+            } else alert("Transaction blocked by team board. Insufficient funds.");
+        }
+
+        async function manualSaveCloud() {
+            const { error } = await supabase.from('career_save').upsert({
+                user_id: currentUser.id, slot_number: activeSlot, role: gameState.role, team: gameState.team,
+                year: gameState.year, budget: gameState.budget, rep: gameState.rep, engine: gameState.engine, mguk: gameState.mguk, aero: gameState.aero
+            }, { onConflict: 'user_id,slot_number' });
+            if (error) alert(error.message); else alert("💾 Telemetry matrices securely committed to cloud array index.");
+        }
+
+        function runManagerSimulation() {
+            let strat = document.getElementById("tyreStrategy").value;
+            let rngBonus = Math.floor(Math.random() * 15) + (gameState.engine * 2) + (gameState.aero * 2);
+            let income = rngBonus > 20 ? 35 : 15;
+            gameState.budget += income; gameState.year++; launchCorrectHub();
+            alert(`Weekend Simulation Finished! Strategy Matrix Vector [${strat.toUpperCase()}] executed. Awarded $${income}M corporate prize distributions.`);
+        }
+
+        function exitToSlots() { loadAllSlotsData(); }
+
+        // --- HIGH-PERFORMANCE CAR CANVAS TRACK ---
+        const canvas = document.getElementById("raceCanvas"); const ctx = canvas.getContext("2d");
+        let trackActive = false; let playerX = 280; let distanceCovered = 0; let velocity = 0;
+        let pTrace = []; let trackKeys = {};
+        window.addEventListener("keydown", e => trackKeys[e.code] = true);
+        window.addEventListener("keyup", e => trackKeys[e.code] = false);
+
+        function launchInteractiveRace() {
+            showScreen("canvasTrackScreen"); document.getElementById("canvasTrackScreen").classList.remove("hidden");
+            trackActive = true; playerX = 280; distanceCovered = 0; velocity = 0; pTrace = [];
+            runTrackLoop();
+        }
+
+        function runTrackLoop() {
+            if(!trackActive) return;
+            let maxSpeed = 310 + (gameState.engine * 6) + (gameState.mguk * 4);
+            if (velocity < maxSpeed) velocity += 2.5;
+            let latSpeed = 4.5 + (gameState.aero * 0.4);
+            if (trackKeys["ArrowLeft"] || trackKeys["KeyA"]) playerX -= latSpeed;
+            if (trackKeys["ArrowRight"] || trackKeys["KeyD"]) playerX += latSpeed;
+            if(playerX < 110) { playerX = 110; velocity *= 0.98; } if(playerX > 460) { playerX = 460; velocity *= 0.98; }
+            distanceCovered += (velocity / 120);
+            document.getElementById("liveSpeedText").innerText = Math.floor(velocity);
+            document.getElementById("liveDistText").innerText = Math.floor(distanceCovered);
+
+            if (Math.random() < 0.4) pTrace.push({ x: playerX + 15 + (Math.random()*8-4), y: 405, alpha: 0.6 });
+
+            ctx.fillStyle = "#12141a"; ctx.fillRect(0,0,canvas.width,canvas.height);
+            ctx.fillStyle = "#282c35"; ctx.fillRect(100,0,400,canvas.height);
+            for(let y=0; y<canvas.height; y+=40) {
+                ctx.fillStyle = (Math.floor((y+Math.floor(distanceCovered))/40)%2===0)?"#e10600":"#ffffff";
+                ctx.fillRect(95, y+(Math.floor(distanceCovered)%40), 5, 20); ctx.fillRect(500, y+(Math.floor(distanceCovered)%40), 5, 20);
+            }
+            ctx.fillStyle = "#0c0d12"; ctx.fillRect(playerX, 350, 30, 60);
+            ctx.fillStyle = "#e10600"; ctx.fillRect(playerX+4, 360, 22, 40);
+            ctx.fillStyle = "#fff"; ctx.fillRect(playerX+8, 352, 14, 4);
+
+            for (let i = pTrace.length - 1; i >= 0; i--) {
+                let p = pTrace[i]; p.alpha -= 0.02; ctx.fillStyle = `rgba(255, 69, 0, ${p.alpha})`; ctx.fillRect(p.x, 350 + (405-350)*(1-p.alpha), 3, 3);
+                if(p.alpha <= 0) pTrace.splice(i,1);
+            }
+
+            if(distanceCovered >= 1000) {
+                trackActive = false; let rewardXP = 30 + (gameState.mguk * 5);
+                gameState.rep += rewardXP; gameState.budget += 20; gameState.year++;
+                alert(`🏁 Checkered Flag! Match loop safely processed. Gained +${rewardXP} XP and $20M sponsor payouts.`);
+                launchCorrectHub(); return;
+            }
+            requestAnimationFrame(runTrackLoop);
+        }
+
+        runCinematicEngine();
+    </script>
+</body>
+</html>
